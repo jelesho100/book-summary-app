@@ -1,11 +1,22 @@
+const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
-createUser = async (req, res) => {
-    const newUser = new User(req.body);  // Create a new user using the request body data
+const createUser = async (req, res) => {
+    //check if user already exists
+
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const newUser = new User({
+        username: req.body.username,
+        email: req.body.email,
+        password: hashedPassword,
+    });  // Create a new user using the request body data
     try {
         // console.log(req.body); 
+        if (!newUser.isNew) {
+            throw new Error("Failed to add user");
+        }
         const savedUser = await newUser.save();  // Save the user in the database
-        res.status(201).json(savedUser);
+        res.status(201).json({ message: "User added successfully" });
     } catch (err) {
         console.log(err);
         res.status(400).json({ message: 'Error creating user' });
@@ -13,7 +24,7 @@ createUser = async (req, res) => {
 
 };
 
-getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();  // Fetch all users from the database
         res.status(200).json(users);
@@ -22,13 +33,13 @@ getAllUsers = async (req, res) => {
     }
 
 };
-updateUser = async (req, res) => {
+const updateUser = async (req, res) => {
     try {
-        const userId = req.params.id 
+        const userId = req.params.id
         // console.log(req.body);
-        const updatedUser = await User.findByIdAndUpdate(userId, req.body, {new: true, runValidators: true});
-        if(!updatedUser) {
-            return res.status(404).json({message: "User not found"});
+        const updatedUser = await User.findByIdAndUpdate(userId, req.body, { new: true, runValidators: true });
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
         }
         res.status(200).json(updatedUser);
     } catch (err) {
@@ -38,22 +49,22 @@ updateUser = async (req, res) => {
 
 };
 
-deleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
     try {
         const userId = req.params.id
         const deletedUser = await User.findByIdAndDelete(userId)
-        if(!deletedUser) {
-            return res.status(404).json({message: "User not found"});
+        if (!deletedUser) {
+            return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json({message: "User has been deleted"})
+        res.status(200).json({ message: "User has been deleted" })
     } catch (err) {
-        res.status(500).json({message: "Error deleting user"})
+        res.status(500).json({ message: "Error deleting user" })
     }
-    
+
 
 };
 
-getUserByID = async (req, res) => {
+const getUserByID = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);  // Fetch user by ID
         if (!user) {
@@ -63,7 +74,6 @@ getUserByID = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: 'Error fetching user' });
     }
-
 };
 
 module.exports = {
@@ -73,3 +83,5 @@ module.exports = {
     deleteUser,
     getUserByID,
 }
+
+// const newUser = new User(req.body);  // Create a new user using the request body data
