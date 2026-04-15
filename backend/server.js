@@ -4,7 +4,7 @@ const mongoose = require("mongoose")
 const app = express()
 const port = process.env.PORT || 5000
 
-app.use(express.json());
+app.use(express.json()); //middleware
 
 mongoose
     .connect(process.env.MONGO_URI, {

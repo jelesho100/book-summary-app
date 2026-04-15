@@ -1,6 +1,29 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
 
+const LOG_TYPE = {
+    SIGN_IN: "sign in",
+    LOGOUT: "logout",
+};
+
+const LEVEL = {
+    INFO: "info",
+    ERROR: "error",
+    WARN: "warn",
+};
+
+const MESSAGE = {
+    SIGN_IN_ATTEMPT: "User attempting to sign in",
+    SIGN_IN_ERROR: "Error occurred while signing in user: ",
+    INCORRECT_EMAIL: "Incorrect email",
+    INCORRECT_PASSWORD: "Incorrect password",
+    DEVICE_BLOCKED: "Sign in attempt from blocked device",
+    CONTEXT_DATA_VERIFY_ERROR: "Context data verification failed",
+    MULTIPLE_ATTEMPT_WITHOUT_VERIFY:
+        "Multiple sign in attempts detected without verifying identity.",
+    LOGOUT_SUCCESS: "User has logged out successfully",
+};
 const createUser = async (req, res) => {
     //check if user already exists
 
@@ -76,12 +99,139 @@ const getUserByID = async (req, res) => {
     }
 };
 
+const loginUser = async (req, res) => {
+    // await saveLogInfo(
+    //     req,
+    //     "User attempting to sign in",
+    //     LOG_TYPE.SIGN_IN,
+    //     LEVEL.INFO
+    // );
+    try {
+    const { email, password } = req.body;
+    const existingUser = await User.findOne({
+        email
+    });
+        if (!existingUser) {
+            // await saveLogInfo(
+            //     req,
+            //     MESSAGE.INCORRECT_EMAIL,
+            //     LOG_TYPE.SIGN_IN,
+            //     LEVEL.ERROR
+            // );
+            return res.status(404).json({
+                message: "Invalid credentials",
+            });
+        }
+        const isPasswordCorrect = await bcrypt.compare(
+            password,
+            existingUser.password
+        );  
+
+        if (!isPasswordCorrect) {
+            // await saveLogInfo(
+            //     req,
+            //     MESSAGE.INCORRECT_PASSWORD,
+            //     LOG_TYPE.SIGN_IN,
+            //     LEVEL.ERROR
+            // );
+
+            return res.status(400).json({
+                message: "Invalid credentials",
+            });
+        } else {          
+            res.status(200).json({
+                email: req.body.email,
+            })
+        }
+
+    } catch (err) {
+        // await saveLogInfo(
+        //     req,
+        //     MESSAGE.SIGN_IN_ERROR + err.message,
+        //     LOG_TYPE.SIGN_IN,
+        //     LEVEL.ERROR
+        // );
+        console.log(err);
+        res.status(500).json({
+            message: "Something went wrong",
+        });
+    }
+}
+
+
+
+
+
 module.exports = {
     createUser,
     getAllUsers,
     updateUser,
     deleteUser,
     getUserByID,
+    loginUser,
 }
+//new user i created after hashed passwords
+// {
+//   "username": "newUser",
+//   "email": "newUser@gmail.com",
+//   "password": "newUser1"
+// }
 
-// const newUser = new User(req.body);  // Create a new user using the request body data
+// const loginUser = async (req, res) => {
+//     // await saveLogInfo(
+//     //     req,
+//     //     "User attempting to sign in",
+//     //     LOG_TYPE.SIGN_IN,
+//     //     LEVEL.INFO
+//     // );
+//     try {
+//     const { email, password } = req.body;
+//     const existingUser = await User.findOne({
+//         email
+//     });
+//         if (!existingUser) {
+//             // await saveLogInfo(
+//             //     req,
+//             //     MESSAGE.INCORRECT_EMAIL,
+//             //     LOG_TYPE.SIGN_IN,
+//             //     LEVEL.ERROR
+//             // );
+//             return res.status(404).json({
+//                 message: "Invalid credentials",
+//             });
+//         }
+//         const isPasswordCorrect = await bcrypt.compare(
+//             password,
+//             existingUser.password
+//         );  
+
+//         if (!isPasswordCorrect) {
+//             // await saveLogInfo(
+//             //     req,
+//             //     MESSAGE.INCORRECT_PASSWORD,
+//             //     LOG_TYPE.SIGN_IN,
+//             //     LEVEL.ERROR
+//             // );
+
+//             return res.status(400).json({
+//                 message: "Invalid credentials",
+//             });
+//         } else {          
+//             res.status(200).json({
+//                 email: req.body.email,
+//             })
+//         }
+
+//     } catch (err) {
+//         // await saveLogInfo(
+//         //     req,
+//         //     MESSAGE.SIGN_IN_ERROR + err.message,
+//         //     LOG_TYPE.SIGN_IN,
+//         //     LEVEL.ERROR
+//         // );
+//         console.log(err);
+//         res.status(500).json({
+//             message: "Something went wrong",
+//         });
+//     }
+// }
